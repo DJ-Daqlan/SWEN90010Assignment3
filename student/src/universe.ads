@@ -54,9 +54,18 @@ package Universe with SPARK_Mode is
          )
          );
 
-   procedure Tick (U : in out Universe);
+   procedure Tick (U : in out Universe)
    --  TODO: add postcondition
-
+   with
+      Post => (
+         for all I in 1..U.Item_Count =>
+            -- Position changes first then detects wall collision
+            -- so every tick the position of objects would change
+            Get_Position (U, I) /= Get_Position (U'Old, I) and then
+            -- Would check for velocity, but only changes on wall contact
+            -- Get_Velocity (U, I) /= Get_Velocity (U'Old, I) and then
+            Get_Radius (U, I) = Get_Radius (U'Old, I)
+      );
 
    procedure Reflect_Velocity_X
      (U : in out Universe; Index : Integer)
