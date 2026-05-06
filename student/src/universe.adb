@@ -68,8 +68,6 @@ package body Universe with SPARK_Mode is
    procedure Tick (U : in out Universe) is
    begin
       --  TODO: implement
-      -- If there is an item in the universe
-      -- If there is no item, then don't increment tick
       for ItemIndex in 1..U.item_count loop
             U.items(ItemIndex).pos := Spatial.Move(P => U.items(ItemIndex).pos, V => U.items(ItemIndex).vel);
       end loop;
