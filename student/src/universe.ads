@@ -29,8 +29,12 @@ package Universe with SPARK_Mode is
      with Pre => Index >= 1 and then Index <= Item_Count (U);
 
 
-   procedure Init (U : out Universe);
+   procedure Init (U : out Universe)
    --  TODO: add postcondition
+   with
+      Post => (
+         Item_Count (U) = 0
+         ); 
 
    procedure Add_Item
      (U   : in out Universe;
@@ -38,11 +42,21 @@ package Universe with SPARK_Mode is
       vel : Spatial.Velocity;
       rad : Big_Real)
      with
-       Pre  => Item_Count (U) < Max_Items;
+       Pre  => Item_Count (U) < Max_Items,
    --  TODO: add postcondition
+       Post => (
+         Item_Count (U) = Item_Count (U'Old) + 1 and then
+         (
+            for all I in 1 .. Item_Count (U'Old) =>
+               Get_Position (U, I) = Get_Position (U'Old, I)
+               and then Get_Velocity (U, I) = Get_Velocity (U'Old, I)
+               and then Get_Radius (U, I) = Get_Radius (U'Old, I)
+         )
+         );
 
    procedure Tick (U : in out Universe);
    --  TODO: add postcondition
+
 
    procedure Reflect_Velocity_X
      (U : in out Universe; Index : Integer)
