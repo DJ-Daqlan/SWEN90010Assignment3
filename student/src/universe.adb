@@ -5,7 +5,10 @@ package body Universe with SPARK_Mode is
    procedure Init (U : out Universe) is
    begin
       --  TODO: implement
-      raise Program_Error with "Init not yet implemented";
+      U.item_count := 0;
+      U.items := (others => <>); -- Default empty Universe_Item
+
+      --raise Program_Error with "Init not yet implemented";
    end Init;
 
    procedure Add_Item
@@ -16,7 +19,13 @@ package body Universe with SPARK_Mode is
    is
    begin
       --  TODO: implement
-      raise Program_Error with "Add_Item not yet implemented";
+      U.item_count := U.item_count + 1;
+      U.items(U.item_count) := (
+         pos => pos,
+         vel => vel,
+         rad => rad
+      );
+      --raise Program_Error with "Add_Item not yet implemented";
    end Add_Item;
 
    procedure Reflect_Velocity_X
