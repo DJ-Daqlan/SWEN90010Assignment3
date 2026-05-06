@@ -20,7 +20,7 @@ package body Universe with SPARK_Mode is
    begin
       --  TODO: implement
       U.item_count := U.item_count + 1;
-      U.items(U.item_count) := (
+      U.items(U.item_count) := ( -- Since it's a one index, the first increment will go from 0 -> 1
          pos => pos,
          vel => vel,
          rad => rad
@@ -63,7 +63,13 @@ package body Universe with SPARK_Mode is
    procedure Tick (U : in out Universe) is
    begin
       --  TODO: implement
-      raise Program_Error with "Tick not yet implemented";
+      if U.item_count > 0 then
+         for ItemIndex in 1..U.item_count loop
+            U.items(ItemIndex).pos := Spatial.Move(P => U.items(ItemIndex).pos, V => U.items(ItemIndex).vel);
+         end loop;
+      end if;
+
+      --raise Program_Error with "Tick not yet implemented";
    end Tick;
 
 end Universe;
