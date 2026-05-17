@@ -66,17 +66,12 @@ package Universe with SPARK_Mode is
       Post => (
          -- Item count remains the same
          Item_Count (U) = Item_Count (U'Old) and then
-         ( -- Check that all items moved pos
-            for all I in 1..Item_Count (U) =>
-               -- Position changes first then detects wall collision
-               -- so every tick the position of objects would change
-               -- Get_Position (U, I) /= Get_Position (U'Old, I) and then
-               
-               -- Velocity changes only on wall contact
-               -- Get_Velocity (U, I) /= Get_Velocity (U'Old, I) and then
-               Get_Radius (U, I) = Get_Radius (U'Old, I)
-      )
-      );
+         (for all I in 1 .. Item_Count (U) =>
+            Get_Position (U, I) =
+              Spatial.Move (Get_Position (U'Old, I),
+                            Get_Velocity (U'Old, I))
+            and then Get_Velocity (U, I) = Get_Velocity (U'Old, I)
+            and then Get_Radius (U, I) = Get_Radius (U'Old, I)));
 
    procedure Reflect_Velocity_X
      (U : in out Universe; Index : Integer)

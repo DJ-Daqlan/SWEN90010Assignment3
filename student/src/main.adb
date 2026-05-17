@@ -1,3 +1,50 @@
+-- Answer to Task 1.1: 
+-- Defining Position and Velocity as private types with expression functions has multiple
+-- advantages. First, it provides a better API design. It allows the SPARK prover to reason
+-- about them effectively, while still providing a clear interface for the rest of the code.
+-- Other functions such as Move, Negate_Vel_X, and Negate_Vel_Y are defined in terms of the
+-- underlying vector operations, but the prover can still understand their behavior through
+-- the expression functions. Second, it prevents it from accidentally compile while mixing
+-- up Position and Velocity, i.e. if they were not distinct types and just Vector.Vector,
+-- they are interchangeable, and the prover would not be able to catch mistakes where a
+-- Position is used where a Velocity is expected, or vice versa. Third, it more human readable,
+-- as it makes it clear when we are working with positions versus velocities, which can help
+-- prevent bugs and improve code clarity.
+-- 
+-- This design can prevent certain programming errors, such as accidentally using a velocity
+-- where a position is expected, or vice versa. For example, the Move function takes a Position
+-- and a Velocity and returns a new Position:
+--       function Move (P : Position; V : Velocity) return Position;
+-- If Position and Velocity were just aliases for Vector.Vector, it would accidentally compile
+-- if we passed a Velocity where a Position is expected, or vice versa:
+--       Move (Velocity_As_Vector, Position_As_Vector)
+-- Also, you may store a Velocity in a variable that is intended to hold a Position, and the
+-- compiler would not catch this mistake. By defining Position and Velocity as distinct types,
+-- the compiler can catch these kinds of errors at compile time, which can help prevent bugs
+-- and improve code safety.
+
+-- Answer to Task 1.2: 
+-- Add_Item: Pre => Item_Count (U) < Max_Items
+-- Add_Item has a preconditon to check if the number of existing items in the universe is less
+-- than the maximum allowed items. This is important because the universe has a fixed-size array
+-- to store items, and if we try to add more items than the maximum, SPARK Prover can help us
+-- catch this error at compile time. If this precondition is removed, it would allow the possibility
+-- of adding more items than the maximum limit, which could lead to a runtime error due to array
+-- bounds violation when trying to add items beyond the maximum limit.
+-- 
+-- Reflect_Velocity_X: Pre => Index >= 1 and then Index <= Item_Count (U)
+-- Reflect_Velocity_X has a precondition to ensure that the index provided is within the valid range.
+-- Since the items in the universe are stored in a base-one indexed array, the valid indices are from 1
+-- to Item_Count (U). This precondition ensures that we do not access the items array out of bounds.
+-- If we remove this precondition, it would lead to a runtime error due to array bounds violation when
+-- trying to access the items array with an invalid index (e.g., 0 or greater than Item_Count (U)).
+--
+-- Reflect_Velocity_Y: Pre => Index >= 1 and then Index <= Item_Count (U)
+-- Reflect_Velocity_Y has the same precondition as Reflect_Velocity_X for the same reason. It checks if
+-- the index provided is within the valid range of 1 to Item_Count (U) to prevent out-of-bounds access
+-- when accessing the items array. If this precondition is removed, it could lead to runtime errors
+-- caused by array bounds violation if an invalid index is used.
+
 with Universe;
 with Spatial;
 with Vector; use Vector;
@@ -38,6 +85,27 @@ procedure Main with SPARK_Mode is
    Tick_Count : Big_Real := To_Big_Real (0);
 
    --  TODO: define Position_Invariant
+   function Position_Invariant
+     (U : Univ.Universe) return Boolean
+   is
+     (Univ.Item_Count (U) = 2
+      and then Tick_Count >= To_Big_Real (0)
+      and then Spatial.Pos_X (Univ.Get_Position (U, 1)) =
+        Spatial.Pos_X (Initial_Positions (1))
+        + Tick_Count * Spatial.Vel_To_Vector (Initial_Velocities (1)).X
+      and then Spatial.Pos_Y (Univ.Get_Position (U, 1)) =
+        Spatial.Pos_Y (Initial_Positions (1))
+        + Tick_Count * Spatial.Vel_To_Vector (Initial_Velocities (1)).Y
+      and then Spatial.Pos_X (Univ.Get_Position (U, 2)) =
+        Spatial.Pos_X (Initial_Positions (2))
+        + Tick_Count * Spatial.Vel_To_Vector (Initial_Velocities (2)).X
+      and then Spatial.Pos_Y (Univ.Get_Position (U, 2)) =
+        Spatial.Pos_Y (Initial_Positions (2))
+        + Tick_Count * Spatial.Vel_To_Vector (Initial_Velocities (2)).Y
+      and then Univ.Get_Velocity (U, 1) = Initial_Velocities (1)
+      and then Univ.Get_Velocity (U, 2) = Initial_Velocities (2)
+      and then Univ.Get_Radius (U, 1) = Initial_Radii (1)
+      and then Univ.Get_Radius (U, 2) = Initial_Radii (2));
 
    function Squared_Dist
      (U : Univ.Universe; I, J : Integer) return Big_Real is
@@ -130,6 +198,7 @@ procedure Main with SPARK_Mode is
 
    procedure Reset_Universe
    --  TODO: add postcondition
+   with Post => Position_Invariant (U)
    is
    begin
       Tick_Count := To_Big_Real (0);
@@ -151,6 +220,7 @@ begin
 
    for Frame in 1 .. 5000 loop
       --  TODO: add loop invariants
+      pragma Loop_Invariant (Position_Invariant (U));
 
       --  TODO: call soundness lemma and assert collision freedom
 
