@@ -29,8 +29,13 @@ package Universe with SPARK_Mode is
      with Pre => Index >= 1 and then Index <= Item_Count (U);
 
 
-   procedure Init (U : out Universe);
+   procedure Init (U : out Universe)
    --  TODO: add postcondition
+   with
+      Post => (
+         Item_Count (U) = 0
+         -- No items to preserve
+         ); 
 
    procedure Add_Item
      (U   : in out Universe;
@@ -38,11 +43,40 @@ package Universe with SPARK_Mode is
       vel : Spatial.Velocity;
       rad : Big_Real)
      with
-       Pre  => Item_Count (U) < Max_Items;
+       Pre  => Item_Count (U) < Max_Items,
    --  TODO: add postcondition
+       Post => (
+         -- Item count is incremented by 1
+         Item_Count (U) = Item_Count (U'Old) + 1 and then
+         ( -- All previous items are the same
+            for all I in 1 .. Item_Count (U'Old) =>
+               Get_Position (U, I) = Get_Position (U'Old, I)
+               and then Get_Velocity (U, I) = Get_Velocity (U'Old, I)
+               and then Get_Radius (U, I) = Get_Radius (U'Old, I)
+         ) and then
+         -- Top item is the item added
+         Get_Position (U, Item_Count (U) ) = pos and then
+         Get_Velocity (U, Item_Count (U) ) = vel and then
+         Get_Radius (U, Item_Count (U) ) = rad
+         );
 
-   procedure Tick (U : in out Universe);
+   procedure Tick (U : in out Universe)
    --  TODO: add postcondition
+   with
+      Post => (
+         -- Item count remains the same
+         Item_Count (U) = Item_Count (U'Old) and then
+         ( -- Check that all items moved pos
+            for all I in 1..Item_Count (U) =>
+               -- Position changes first then detects wall collision
+               -- so every tick the position of objects would change
+               -- Get_Position (U, I) /= Get_Position (U'Old, I) and then
+               
+               -- Velocity changes only on wall contact
+               -- Get_Velocity (U, I) /= Get_Velocity (U'Old, I) and then
+               Get_Radius (U, I) = Get_Radius (U'Old, I)
+      )
+      );
 
    procedure Reflect_Velocity_X
      (U : in out Universe; Index : Integer)
