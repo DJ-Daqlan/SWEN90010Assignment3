@@ -12,7 +12,7 @@
 -- prevent bugs and improve code clarity.
 -- 
 -- This design can prevent certain programming errors, such as accidentally using a velocity
--- where a position is expected, or vice versa. For example, the Move function takes a Position
+-- where a position is expected, and vice versa. For example, the Move function takes a Position
 -- and a Velocity and returns a new Position:
 --       function Move (P : Position; V : Velocity) return Position;
 -- If Position and Velocity were just aliases for Vector.Vector, it would accidentally compile
@@ -90,18 +90,21 @@ procedure Main with SPARK_Mode is
    is
      (Univ.Item_Count (U) = 2
       and then Tick_Count >= To_Big_Real (0)
+      -- Position of Item 1
       and then Spatial.Pos_X (Univ.Get_Position (U, 1)) =
         Spatial.Pos_X (Initial_Positions (1))
         + Tick_Count * Spatial.Vel_To_Vector (Initial_Velocities (1)).X
       and then Spatial.Pos_Y (Univ.Get_Position (U, 1)) =
         Spatial.Pos_Y (Initial_Positions (1))
         + Tick_Count * Spatial.Vel_To_Vector (Initial_Velocities (1)).Y
+      -- Position of Item 2
       and then Spatial.Pos_X (Univ.Get_Position (U, 2)) =
         Spatial.Pos_X (Initial_Positions (2))
         + Tick_Count * Spatial.Vel_To_Vector (Initial_Velocities (2)).X
       and then Spatial.Pos_Y (Univ.Get_Position (U, 2)) =
         Spatial.Pos_Y (Initial_Positions (2))
         + Tick_Count * Spatial.Vel_To_Vector (Initial_Velocities (2)).Y
+      -- Constant variables remain constant
       and then Univ.Get_Velocity (U, 1) = Initial_Velocities (1)
       and then Univ.Get_Velocity (U, 2) = Initial_Velocities (2)
       and then Univ.Get_Radius (U, 1) = Initial_Radii (1)
