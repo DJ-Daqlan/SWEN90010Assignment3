@@ -45,6 +45,7 @@
 -- when accessing the items array. If this precondition is removed, it could lead to runtime errors
 -- caused by array bounds violation if an invalid index is used.
 
+with Collision_Math;
 with Universe;
 with Spatial;
 with Vector; use Vector;
@@ -129,6 +130,15 @@ procedure Main with SPARK_Mode is
       Pre => I in 1 .. 2 and J in 1 .. 2;
 
    --  TODO: define No_Future_Collision_Pair
+   function No_Future_Collision_Pair
+      (I, J : Integer) return Boolean is
+         (not (Collision_Math.Will_Collide_Vec (
+            S => Vector.Sub (V1 => Initial_Positions (I), V2 => Initial_Positions (J)), 
+            V => Vector.Sub (V1 => Initial_Velocities (I), V2 => Initial_Velocities (J)), 
+            Eps2 => Pair_Sep2 (I => I, J => J)
+            )))
+      with 
+         Pre => I in 1 .. 2 and J in 1 .. 2;
 
    --  TODO: define Lemma_No_Collision_Pair
 
@@ -220,10 +230,15 @@ begin
    Reset_Universe;
 
    --  TODO: add pre-loop collision check
+   -- if there is a collision
+   if not No_Future_Collision_Pair (1, 2) then
+      Print_Collision (Tick_Count);
+   end if;
 
    for Frame in 1 .. 5000 loop
       --  TODO: add loop invariants
       pragma Loop_Invariant (Position_Invariant (U));
+      pragma Loop_Invariant (No_Future_Collision_Pair (1, 2));
 
       --  TODO: call soundness lemma and assert collision freedom
 
@@ -256,6 +271,9 @@ begin
             Reset_Universe;
 
             --  TODO: add post-bounce collision check
+            if not No_Future_Collision_Pair (1, 2) then
+               Print_Collision (Tick_Count);
+            end if;
          end if;
       end;
    end loop;
