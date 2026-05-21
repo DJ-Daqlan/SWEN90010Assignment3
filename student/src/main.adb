@@ -133,8 +133,14 @@ procedure Main with SPARK_Mode is
    function No_Future_Collision_Pair
       (I, J : Integer) return Boolean is
          (not (Collision_Math.Will_Collide_Vec (
-            S => Vector.Sub (V1 => Spatial.To_Vector (Initial_Positions (I)), V2 => Spatial.To_Vector (Initial_Positions (J))), 
-            V => Vector.Sub (V1 => Spatial.Vel_To_Vector (Initial_Velocities (I)), V2 => Spatial.Vel_To_Vector (Initial_Velocities (J))), 
+            S => Vector.Sub (
+               V1 => Spatial.To_Vector (Initial_Positions (I)), 
+               V2 => Spatial.To_Vector (Initial_Positions (J))
+            ), 
+            V => Vector.Sub (
+               V1 => Spatial.Vel_To_Vector (Initial_Velocities (I)), 
+               V2 => Spatial.Vel_To_Vector (Initial_Velocities (J))
+            ), 
             Eps2 => Pair_Sep2 (I => I, J => J)
             )))
       with 
@@ -230,7 +236,6 @@ begin
    Reset_Universe;
 
    --  TODO: add pre-loop collision check
-   -- if there is a collision
    if not No_Future_Collision_Pair (1, 2) then
       Print_Collision (0);
    end if;
