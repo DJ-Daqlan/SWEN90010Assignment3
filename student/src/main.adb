@@ -147,6 +147,43 @@ procedure Main with SPARK_Mode is
          Pre => I in 1 .. 2 and J in 1 .. 2;
 
    --  TODO: define Lemma_No_Collision_Pair
+   procedure Lemma_No_Collision_Pair
+   (U : Univ.Universe; I, J : Integer)
+   with
+      Ghost,
+      Pre => (
+         Position_Invariant (U) and then
+         I in 1 .. 2 and then
+         J in 1 .. 2 and then
+         Tick_Count >= To_Big_Real (0) and then
+         No_Future_Collision_Pair (I, J)
+      ),
+      Post => (
+         Squared_Dist (U => U, I => I, J => J) > Pair_Sep2 (I => I, J => J)
+      )
+   is 
+   begin
+      Collision_Math.Check_Implies_Safe_Vec (
+         S => Vector.Sub (
+            V1 => Spatial.To_Vector (P => Univ.Get_Position (U => U, Index => I)),
+            V2 => Spatial.To_Vector (P => Univ.Get_Position (U => U, Index => J))
+         ), 
+         V => Vector.Sub (
+            V1 => Spatial.Vel_To_Vector (V => Univ.Get_Velocity (U => U, Index => I)), 
+            V2 => Spatial.Vel_To_Vector (V => Univ.Get_Velocity (U => U, Index => J))
+         ),
+         Eps2 => Pair_Sep2 (I => I, J => J), 
+         T => Tick_Count);
+
+      Collision_Math.Lemma_Sq_Dist_Bridge (
+         P1 => Spatial.To_Vector (P => Univ.Get_Position (U => U, Index => I)), 
+         P2 => Spatial.To_Vector (P => Univ.Get_Position (U => U, Index => J)), 
+         Init1 => Spatial.To_Vector (P => Initial_Positions (I)), 
+         Init2 => Spatial.To_Vector (P => Initial_Positions (J)), 
+         Vel1 => Spatial.Vel_To_Vector (V => Univ.Get_Velocity (U => U, Index => I)), 
+         Vel2 => Spatial.Vel_To_Vector (V => Univ.Get_Velocity (U => U, Index => J)), 
+         T => Tick_Count);
+   end Lemma_No_Collision_Pair;
 
    type Bounce_Flags is record
       X : Boolean := False;
@@ -246,6 +283,8 @@ begin
       pragma Loop_Invariant (No_Future_Collision_Pair (1, 2));
 
       --  TODO: call soundness lemma and assert collision freedom
+      Lemma_No_Collision_Pair (U => U, I => 1, J => 2);
+      pragma Assert (Squared_Dist (U => U, I => 1, J => 2) > Pair_Sep2 (I => 1, J => 2));
 
       Disp.Capture (U);
       Univ.Tick (U);
