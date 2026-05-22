@@ -165,12 +165,12 @@ procedure Main with SPARK_Mode is
    begin
       Collision_Math.Check_Implies_Safe_Vec (
          S => Vector.Sub (
-            V1 => Spatial.To_Vector (P => Univ.Get_Position (U => U, Index => I)),
-            V2 => Spatial.To_Vector (P => Univ.Get_Position (U => U, Index => J))
+            V1 => Spatial.To_Vector (P => Initial_Positions (I)),
+            V2 => Spatial.To_Vector (P => Initial_Positions (J))
          ), 
          V => Vector.Sub (
-            V1 => Spatial.Vel_To_Vector (V => Univ.Get_Velocity (U => U, Index => I)), 
-            V2 => Spatial.Vel_To_Vector (V => Univ.Get_Velocity (U => U, Index => J))
+            V1 => Spatial.Vel_To_Vector (V => Initial_Velocities (I)), 
+            V2 => Spatial.Vel_To_Vector (V => Initial_Velocities (J))
          ),
          Eps2 => Pair_Sep2 (I => I, J => J), 
          T => Tick_Count);
@@ -275,6 +275,7 @@ begin
    --  TODO: add pre-loop collision check
    if not No_Future_Collision_Pair (1, 2) then
       Print_Collision (0);
+      return;
    end if;
 
    for Frame in 1 .. 5000 loop
@@ -317,6 +318,7 @@ begin
             --  TODO: add post-bounce collision check
             if not No_Future_Collision_Pair (1, 2) then
                Print_Collision (Frame);
+               return;
             end if;
          end if;
       end;
