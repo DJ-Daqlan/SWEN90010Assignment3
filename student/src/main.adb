@@ -1,4 +1,4 @@
--- Answer to Task 1.1: 
+-- Answer to Task 3.1.1: 
 -- Defining Position and Velocity as private types with expression functions has multiple
 -- advantages. First, it provides a better API design. It allows the SPARK prover to reason
 -- about them effectively, while still providing a clear interface for the rest of the code.
@@ -23,7 +23,7 @@
 -- the compiler can catch these kinds of errors at compile time, which can help prevent bugs
 -- and improve code safety.
 
--- Answer to Task 1.2: 
+-- Answer to Task 3.1.2: 
 -- Add_Item: Pre => Item_Count (U) < Max_Items
 -- Add_Item has a preconditon to check if the number of existing items in the universe is less
 -- than the maximum allowed items. This is important because the universe has a fixed-size array
@@ -45,7 +45,21 @@
 -- when accessing the items array. If this precondition is removed, it could lead to runtime errors
 -- caused by array bounds violation if an invalid index is used.
 --
--- Answer to Task 7:
+-- Answer to Task 3.7:
+-- THe proof does not guarantee that when the solution halts early, that a collision would have occurred 
+-- if the simulation continued, and there is no guarantee that the simulation would halt even if there 
+-- was no collision. The check No_Future_Collision Pair uses the Will_Collide_Vec procedure to determine
+-- if there is a collision based on the dot product of the two initial velocities or initial positions 
+-- being under the squared sum of radii. In this proof, it establishes that the bounces are reflections 
+-- of the items' velocity and that there will be a collision based on the difference of the two trajectories,
+-- being under a certain threshold, determined by the radii. However, it does not establish the scenarios where
+-- the objects are non-circular, or even irregularly-shaped. Within a larger picture, it is impossible to 
+-- determine if the simulation will halt at all, or is impossibly difficult to determine if there is a collision
+-- at all. The scenario itself is an example of the Halting problem, where there is no real possible way 
+-- to verify that the simulation has halted as a result of a true collision. While it bases its predicted 
+-- collision off the No_Future_Collision_Pair, there is ultimately no guarantee that the single velocity 
+-- and sum squared radii will result in a collision.
+
 -- The proof does not guarantee that an actual collision definitely would have occurred had the simulation
 -- continued whenever the simulation halts early. The check No_Future_Collision_Pair uses
 -- Will_Collide_Vec(S, V, Eps2), where S is the difference between the two initial positions after the
