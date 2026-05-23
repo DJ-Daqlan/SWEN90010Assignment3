@@ -44,6 +44,20 @@
 -- the index provided is within the valid range of 1 to Item_Count (U) to prevent out-of-bounds access
 -- when accessing the items array. If this precondition is removed, it could lead to runtime errors
 -- caused by array bounds violation if an invalid index is used.
+--
+-- Answer to Task 7:
+-- The proof does not guarantee that an actual collision definitely would have occurred had the simulation
+-- continued whenever the simulation halts early. The check No_Future_Collision_Pair uses
+-- Will_Collide_Vec(S, V, Eps2), where S is the difference between the two initial positions after the
+-- most recent reset/bounce, V is the difference between their velocities, and Eps2 is the squared sum
+-- of their radii. This predicts whether the relative straight-line trajectory S + tV ever comes within
+-- collision distance, assuming the current velocities remain constant. The Task 3.6 proof only
+-- establishes the safe direction: if No_Future_Collision_Pair is true, then Lemma_No_Collision_Pair
+-- proves that the objects are separated on the current frame. It does not prove the converse, that a
+-- predicted future collision must actually occur in the full simulation. Since the real simulation
+-- includes future wall reflections, a bounce could change the velocities before the predicted collision
+-- point, so the simulation could halt conservatively even though no actual collision would have happened.
+
 
 with Collision_Math;
 with Universe;
