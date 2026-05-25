@@ -298,7 +298,7 @@ begin
    --  TODO: add pre-loop collision check
    if not No_Future_Collision_Pair (1, 2) then
       Print_Collision (0);
-      return;
+      exit;
    end if;
 
    for Frame in 1 .. 5000 loop
@@ -341,7 +341,7 @@ begin
             --  TODO: add post-bounce collision check
             if not No_Future_Collision_Pair (1, 2) then
                Print_Collision (Frame);
-               return;
+               exit;
             end if;
          end if;
       end;
