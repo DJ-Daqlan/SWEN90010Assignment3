@@ -68,8 +68,24 @@ package body Universe with SPARK_Mode is
    procedure Tick (U : in out Universe) is
    begin
       --  TODO: implement
-      for ItemIndex in 1..U.item_count loop
-            U.items(ItemIndex).pos := Spatial.Move(P => U.items(ItemIndex).pos, V => U.items(ItemIndex).vel);
+      for ItemIndex in 1 .. U.item_count loop
+         pragma Loop_Invariant (U.item_count = U'Loop_Entry.item_count);
+         pragma Loop_Invariant
+           (for all I in 1 .. U.item_count =>
+              U.items (I).vel = U'Loop_Entry.items (I).vel
+              and then U.items (I).rad = U'Loop_Entry.items (I).rad);
+         pragma Loop_Invariant
+           (for all I in 1 .. ItemIndex - 1 =>
+              U.items (I).pos =
+                Spatial.Move (U'Loop_Entry.items (I).pos,
+                              U'Loop_Entry.items (I).vel));
+         pragma Loop_Invariant
+           (for all I in ItemIndex .. U.item_count =>
+              U.items (I).pos = U'Loop_Entry.items (I).pos);
+
+         U.items (ItemIndex).pos :=
+           Spatial.Move (P => U.items (ItemIndex).pos,
+                         V => U.items (ItemIndex).vel);
       end loop;
 
       --raise Program_Error with "Tick not yet implemented";

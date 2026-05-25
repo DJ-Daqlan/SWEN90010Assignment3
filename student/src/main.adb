@@ -1,15 +1,19 @@
 -- Answer to Task 3.1.1: 
 -- Defining Position and Velocity as private types with expression functions has multiple
--- advantages. First, it provides a better API design. It allows the SPARK prover to reason
--- about them effectively, while still providing a clear interface for the rest of the code.
--- Other functions such as Move, Negate_Vel_X, and Negate_Vel_Y are defined in terms of the
--- underlying vector operations, but the prover can still understand their behavior through
--- the expression functions. Second, it prevents it from accidentally compile while mixing
--- up Position and Velocity, i.e. if they were not distinct types and just Vector.Vector,
--- they are interchangeable, and the prover would not be able to catch mistakes where a
--- Position is used where a Velocity is expected, or vice versa. Third, it more human readable,
--- as it makes it clear when we are working with positions versus velocities, which can help
--- prevent bugs and improve code clarity.
+-- advantages. First, Ada prevents implicit widening/narrowing-style conversions between
+-- Velocity and Position and Vector.Vector, because Position and Velocity are distinct
+-- derived types. The code must use explicit conversion functions, so accidental mixing of
+-- positions, velocities, and raw vectors is caught by the compiler. Second, it provides a
+-- better API design. It allows the SPARK prover to reason about them effectively, while
+-- still providing a clear interface for the rest of the code. Other functions such as Move,
+-- Negate_Vel_X, and Negate_Vel_Y are defined in terms of the underlying vector operations,
+-- but the prover can still understand their behavior through the expression functions.
+-- Third, it prevents it from accidentally compile while mixing up Position and Velocity,
+-- i.e. if they were not distinct types and just Vector.Vector, they are interchangeable,
+-- and the prover would not be able to catch mistakes where a Position is used where a
+-- Velocity is expected, or vice versa. Fourth, it more human readable, as it makes it clear
+-- when we are working with positions versus velocities, which can help prevent bugs and
+-- improve code clarity.
 -- 
 -- This design can prevent certain programming errors, such as accidentally using a velocity
 -- where a position is expected, and vice versa. For example, the Move function takes a Position
@@ -44,33 +48,24 @@
 -- the index provided is within the valid range of 1 to Item_Count (U) to prevent out-of-bounds access
 -- when accessing the items array. If this precondition is removed, it could lead to runtime errors
 -- caused by array bounds violation if an invalid index is used.
---
--- Answer to Task 3.7:
--- THe proof does not guarantee that when the solution halts early, that a collision would have occurred 
--- if the simulation continued, and there is no guarantee that the simulation would halt even if there 
--- was no collision. The check No_Future_Collision Pair uses the Will_Collide_Vec procedure to determine
--- if there is a collision based on the dot product of the two initial velocities or initial positions 
--- being under the squared sum of radii. In this proof, it establishes that the bounces are reflections 
--- of the items' velocity and that there will be a collision based on the difference of the two trajectories,
--- being under a certain threshold, determined by the radii. However, it does not establish the scenarios where
--- the objects are non-circular, or even irregularly-shaped. Within a larger picture, it is impossible to 
--- determine if the simulation will halt at all, or is impossibly difficult to determine if there is a collision
--- at all. The scenario itself is an example of the Halting problem, where there is no real possible way 
--- to verify that the simulation has halted as a result of a true collision. While it bases its predicted 
--- collision off the No_Future_Collision_Pair, there is ultimately no guarantee that the single velocity 
--- and sum squared radii will result in a collision.
 
+-- Answer to Task 3.7:
 -- The proof does not guarantee that an actual collision definitely would have occurred had the simulation
 -- continued whenever the simulation halts early. The check No_Future_Collision_Pair uses
 -- Will_Collide_Vec(S, V, Eps2), where S is the difference between the two initial positions after the
 -- most recent reset/bounce, V is the difference between their velocities, and Eps2 is the squared sum
 -- of their radii. This predicts whether the relative straight-line trajectory S + tV ever comes within
--- collision distance, assuming the current velocities remain constant. The Task 3.6 proof only
--- establishes the safe direction: if No_Future_Collision_Pair is true, then Lemma_No_Collision_Pair
--- proves that the objects are separated on the current frame. It does not prove the converse, that a
--- predicted future collision must actually occur in the full simulation. Since the real simulation
--- includes future wall reflections, a bounce could change the velocities before the predicted collision
--- point, so the simulation could halt conservatively even though no actual collision would have happened.
+-- collision distance, assuming the current velocities remain constant.
+-- 
+-- Task 3.6 only asks us to prove soundness for the current straight-line segment between bounces, not to
+-- predict all later segments after future wall reflections. Therefore the proof does not need to model
+-- every possible future bounce before deciding whether the early halt is a true unavoidable collision.
+-- The Task 3.6 proof only establishes the safe direction: if No_Future_Collision_Pair is true, then
+-- Lemma_No_Collision_Pair proves that the objects are not colliding on the current settings (positions
+-- and velosities) and predicted trajectories. It does not prove that a predicted future collision must
+-- occur in actual simulations, where wall reflections are considered. Since the real simulation includes
+-- future wall reflections, a bounce could change the velocities before the predicted collision point, so
+-- the simulation could halt conservatively even though no actual collision would have happened.
 
 
 with Collision_Math;
