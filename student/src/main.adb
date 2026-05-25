@@ -1,72 +1,60 @@
--- Answer to Task 3.1.1: 
--- Defining Position and Velocity as private types with expression functions has multiple
--- advantages. First, Ada prevents implicit widening/narrowing-style conversions between
--- Velocity and Position and Vector.Vector, because Position and Velocity are distinct
--- derived types. The code must use explicit conversion functions, so accidental mixing of
--- positions, velocities, and raw vectors is caught by the compiler. Second, it provides a
--- better API design. It allows the SPARK prover to reason about them effectively, while
--- still providing a clear interface for the rest of the code. Other functions such as Move,
--- Negate_Vel_X, and Negate_Vel_Y are defined in terms of the underlying vector operations,
--- but the prover can still understand their behavior through the expression functions.
--- Third, it prevents it from accidentally compile while mixing up Position and Velocity,
--- i.e. if they were not distinct types and just Vector.Vector, they are interchangeable,
--- and the prover would not be able to catch mistakes where a Position is used where a
--- Velocity is expected, or vice versa. Fourth, it more human readable, as it makes it clear
--- when we are working with positions versus velocities, which can help prevent bugs and
--- improve code clarity.
--- 
--- This design can prevent certain programming errors, such as accidentally using a velocity
--- where a position is expected, and vice versa. For example, the Move function takes a Position
--- and a Velocity and returns a new Position:
---       function Move (P : Position; V : Velocity) return Position;
--- If Position and Velocity were just aliases for Vector.Vector, it would accidentally compile
--- if we passed a Velocity where a Position is expected, or vice versa:
---       Move (Velocity_As_Vector, Position_As_Vector)
--- Also, you may store a Velocity in a variable that is intended to hold a Position, and the
--- compiler would not catch this mistake. By defining Position and Velocity as distinct types,
--- the compiler can catch these kinds of errors at compile time, which can help prevent bugs
--- and improve code safety.
+-- Authors:
+-- Yee Kiu Yeung - 1568135
+-- Daqlan Lee - 1263658
 
--- Answer to Task 3.1.2: 
--- Add_Item: Pre => Item_Count (U) < Max_Items
--- Add_Item has a preconditon to check if the number of existing items in the universe is less
--- than the maximum allowed items. This is important because the universe has a fixed-size array
--- to store items, and if we try to add more items than the maximum, SPARK Prover can help us
--- catch this error at compile time. If this precondition is removed, it would allow the possibility
--- of adding more items than the maximum limit, which could lead to a runtime error due to array
--- bounds violation when trying to add items beyond the maximum limit.
--- 
--- Reflect_Velocity_X: Pre => Index >= 1 and then Index <= Item_Count (U)
--- Reflect_Velocity_X has a precondition to ensure that the index provided is within the valid range.
--- Since the items in the universe are stored in a base-one indexed array, the valid indices are from 1
--- to Item_Count (U). This precondition ensures that we do not access the items array out of bounds.
--- If we remove this precondition, it would lead to a runtime error due to array bounds violation when
--- trying to access the items array with an invalid index (e.g., 0 or greater than Item_Count (U)).
+-- Answer to Task 3.1.1:
+-- Defining Position and Velocity as separate private types gives the program a
+-- stronger type-level distinction between locations and rates of movement. Although
+-- both are represented internally using Vector.Vector, client code cannot freely
+-- substitute one for the other. Code must use the explicit conversion functions, such
+-- as To_Position, To_Velocity, To_Vector, and Vel_To_Vector, whenever it really needs
+-- to move between these concepts.
 --
--- Reflect_Velocity_Y: Pre => Index >= 1 and then Index <= Item_Count (U)
--- Reflect_Velocity_Y has the same precondition as Reflect_Velocity_X for the same reason. It checks if
--- the index provided is within the valid range of 1 to Item_Count (U) to prevent out-of-bounds access
--- when accessing the items array. If this precondition is removed, it could lead to runtime errors
--- caused by array bounds violation if an invalid index is used.
+-- This prevents mistakes where a position is accidentally used as a velocity, or a
+-- velocity is accidentally used as a position. For example, Spatial.Move has the type:
+--
+--       function Move (P : Position; V : Velocity) return Position;
+--
+-- If both arguments were plain Vector.Vector values, a call such as
+-- Move (Velocity_As_Vector, Position_As_Vector) would compile even though the
+-- arguments are conceptually reversed. With distinct Position and Velocity types, Ada
+-- rejects that mistake at compile time. This also makes the code easier to read,
+-- because the type of each value records whether it is being used as a position or as
+-- a velocity.
+
+-- Answer to Task 3.1.2:
+-- Get_Position, Get_Velocity, and Get_Radius require Index to be between 1 and
+-- Item_Count (U). The universe stores its items in a fixed array whose valid occupied
+-- entries are exactly 1 .. Item_Count (U). Without these preconditions, a caller could
+-- request an item at index 0 or at an index greater than the number of stored items,
+-- causing an invalid array access.
+--
+-- Add_Item requires Item_Count (U) < Max_Items because the universe has a fixed-size
+-- backing array. Adding an item when the universe is already full would increment the
+-- count past the last valid array position and then try to write outside the array
+-- bounds.
+--
+-- Reflect_Velocity_X and Reflect_Velocity_Y require Index to be between 1 and
+-- Item_Count (U) for the same reason as the getter functions: they access and update
+-- the item stored at that index. If the index did not refer to an existing item, the
+-- procedure could read or write outside the valid occupied part of the array.
 
 -- Answer to Task 3.7:
--- The proof does not guarantee that an actual collision definitely would have occurred had the simulation
--- continued whenever the simulation halts early. The check No_Future_Collision_Pair uses
--- Will_Collide_Vec(S, V, Eps2), where S is the difference between the two initial positions after the
--- most recent reset/bounce, V is the difference between their velocities, and Eps2 is the squared sum
--- of their radii. This predicts whether the relative straight-line trajectory S + tV ever comes within
--- collision distance, assuming the current velocities remain constant.
--- 
--- Task 3.6 only asks us to prove soundness for the current straight-line segment between bounces, not to
--- predict all later segments after future wall reflections. Therefore the proof does not need to model
--- every possible future bounce before deciding whether the early halt is a true unavoidable collision.
--- The Task 3.6 proof only establishes the safe direction: if No_Future_Collision_Pair is true, then
--- Lemma_No_Collision_Pair proves that the objects are not colliding on the current settings (positions
--- and velosities) and predicted trajectories. It does not prove that a predicted future collision must
--- occur in actual simulations, where wall reflections are considered. Since the real simulation includes
--- future wall reflections, a bounce could change the velocities before the predicted collision point, so
--- the simulation could halt conservatively even though no actual collision would have happened.
-
+-- No, the proof does not guarantee that an early halt means a collision definitely
+-- would have occurred in the full simulation. The collision check uses
+-- Will_Collide_Vec on the current straight-line segment, using the relative position,
+-- relative velocity, and squared sum of the radii. This proves that, if the current
+-- velocities remain unchanged, the two straight-line trajectories will eventually
+-- come within collision distance.
+--
+-- However, the full simulation also includes wall bounces. A bounce can occur before
+-- the predicted collision point and change one or both velocities, producing a new
+-- straight-line segment. Task 3.6 proves only the safe direction: when
+-- No_Future_Collision_Pair is true, Lemma_No_Collision_Pair shows that the objects
+-- are separated on the current frame for the current segment. It does not prove that
+-- a predicted future collision is unavoidable in the full bouncing simulation.
+-- Therefore, the simulation could halt conservatively even though no actual collision
+-- would have happened after future bounces.
 
 with Collision_Math;
 with Universe;
@@ -198,6 +186,46 @@ procedure Main with SPARK_Mode is
          Eps2 => Pair_Sep2 (I => I, J => J), 
          T => Tick_Count);
 
+      if I = 1 then
+         pragma Assert
+           (Spatial.To_Vector (Univ.Get_Position (U, I)) =
+            Vector.Add
+              (Spatial.To_Vector (Initial_Positions (I)),
+               Vector.Scale
+                 (Spatial.Vel_To_Vector (Initial_Velocities (I)),
+                  Tick_Count)));
+      else
+         pragma Assert (I = 2);
+         pragma Assert
+           (Spatial.To_Vector (Univ.Get_Position (U, I)) =
+            Vector.Add
+              (Spatial.To_Vector (Initial_Positions (I)),
+               Vector.Scale
+                 (Spatial.Vel_To_Vector (Initial_Velocities (I)),
+                  Tick_Count)));
+      end if;
+
+      if J = 1 then
+         pragma Assert
+           (Spatial.To_Vector (Univ.Get_Position (U, J)) =
+            Vector.Add
+              (Spatial.To_Vector (Initial_Positions (J)),
+               Vector.Scale
+                 (Spatial.Vel_To_Vector (Initial_Velocities (J)),
+                  Tick_Count)));
+      else
+         pragma Assert (J = 2);
+         pragma Assert
+           (Spatial.To_Vector (Univ.Get_Position (U, J)) =
+            Vector.Add
+              (Spatial.To_Vector (Initial_Positions (J)),
+               Vector.Scale
+                 (Spatial.Vel_To_Vector (Initial_Velocities (J)),
+                  Tick_Count)));
+      end if;
+      pragma Assert (Univ.Get_Velocity (U, I) = Initial_Velocities (I));
+      pragma Assert (Univ.Get_Velocity (U, J) = Initial_Velocities (J));
+
       Collision_Math.Lemma_Sq_Dist_Bridge (
          P1 => Spatial.To_Vector (P => Univ.Get_Position (U => U, Index => I)), 
          P2 => Spatial.To_Vector (P => Univ.Get_Position (U => U, Index => J)), 
@@ -301,6 +329,7 @@ begin
       exit;
    end if;
 
+   Simulation_Loop :
    for Frame in 1 .. 5000 loop
       --  TODO: add loop invariants
       pragma Loop_Invariant (Position_Invariant (U));
@@ -313,12 +342,13 @@ begin
       Disp.Capture (U);
       Univ.Tick (U);
       Tick_Count := Tick_Count + To_Big_Real (1);
+      pragma Assert (Position_Invariant (U));
 
       declare
          Flags : constant Bounce_Array := Detect_Bounces (U);
       begin
          if Flags (1).X or else Flags (1).Y
-           or else Flags (2).X or else Flags (2).Y
+            or else Flags (2).X or else Flags (2).Y
          then
             for Item in 1 .. 2 loop
                pragma Loop_Invariant (Univ.Item_Count (U) = 2);
@@ -330,10 +360,10 @@ begin
                end if;
             end loop;
             Initial_Positions :=
-              (Univ.Get_Position (U, 1),
+               (Univ.Get_Position (U, 1),
                Univ.Get_Position (U, 2));
             Initial_Velocities :=
-              (Univ.Get_Velocity (U, 1),
+               (Univ.Get_Velocity (U, 1),
                Univ.Get_Velocity (U, 2));
 
             Reset_Universe;
@@ -341,11 +371,11 @@ begin
             --  TODO: add post-bounce collision check
             if not No_Future_Collision_Pair (1, 2) then
                Print_Collision (Frame);
-               exit;
+               exit Simulation_Loop;
             end if;
          end if;
       end;
-   end loop;
+   end loop Simulation_Loop;
 
    Disp.Capture (U);
    Disp.Save ("simulation.html",
